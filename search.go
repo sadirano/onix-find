@@ -124,7 +124,7 @@ func runFFWithWalkFallback(target, query, editor string, vis *Config) error {
 
 func gatherFilesWithWalk(root, query string) ([]string, error) {
 	queryLower := strings.ToLower(query)
-	var files []string
+	files := make([]string, 0, 256)
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
