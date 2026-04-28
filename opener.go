@@ -17,8 +17,8 @@ func IsBinaryFile(path string) bool {
 	}
 	defer f.Close()
 	buf := make([]byte, 512)
-	n, err := f.Read(buf)
-	if err != nil && n == 0 {
+	n, _ := f.Read(buf)
+	if n == 0 {
 		return false
 	}
 	return bytes.IndexByte(buf[:n], 0) >= 0
