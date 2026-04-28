@@ -20,6 +20,24 @@ func runFF(target, query, editor string, vis *Config) error {
 	return runFFWithWalkFallback(target, query, editor, vis)
 }
 
+func buildFZFArgs(query string, vis *Config) []string {
+	preview := resolvePreviewCommand(vis.FZF.FF.Preview, "")
+	args := []string{
+		"--multi",
+		"--expect=ctrl-e",
+		"--prompt", vis.FZF.FF.Prompt,
+		"--query", query,
+	}
+	args = appendLayoutArg(args, vis.FZF.FF.Layout)
+	if preview != "" {
+		args = append(args, "--preview", preview)
+		if window := strings.TrimSpace(vis.FZF.FF.PreviewWindow); window != "" {
+			args = append(args, "--preview-window", window)
+		}
+	}
+	return args
+}
+
 func runFFWithEverythingStream(target, query, editor string, vis *Config) error {
 	esArgs := []string{"-p", "-path", target}
 	if query != "" {
@@ -32,21 +50,7 @@ func runFFWithEverythingStream(target, query, editor string, vis *Config) error 
 		return fmt.Errorf("run es: %w", err)
 	}
 
-	preview := resolvePreviewCommand(vis.FZF.FF.Preview, "")
-	fzfArgs := []string{
-		"--multi",
-		"--expect=ctrl-e",
-		"--prompt", vis.FZF.FF.Prompt,
-		"--query", query,
-	}
-	fzfArgs = appendLayoutArg(fzfArgs, vis.FZF.FF.Layout)
-	if preview != "" {
-		fzfArgs = append(fzfArgs, "--preview", preview)
-		if window := strings.TrimSpace(vis.FZF.FF.PreviewWindow); window != "" {
-			fzfArgs = append(fzfArgs, "--preview-window", window)
-		}
-	}
-	fzfCmd := exec.Command("fzf", fzfArgs...)
+	fzfCmd := exec.Command("fzf", buildFZFArgs(query, vis)...)
 	fzfCmd.Stdin = esOut
 	fzfCmd.Stderr = os.Stderr
 
@@ -92,21 +96,7 @@ func runFFWithWalkFallback(target, query, editor string, vis *Config) error {
 		input.WriteByte('\n')
 	}
 
-	preview := resolvePreviewCommand(vis.FZF.FF.Preview, "")
-	fzfArgs := []string{
-		"--multi",
-		"--expect=ctrl-e",
-		"--prompt", vis.FZF.FF.Prompt,
-		"--query", query,
-	}
-	fzfArgs = appendLayoutArg(fzfArgs, vis.FZF.FF.Layout)
-	if preview != "" {
-		fzfArgs = append(fzfArgs, "--preview", preview)
-		if window := strings.TrimSpace(vis.FZF.FF.PreviewWindow); window != "" {
-			fzfArgs = append(fzfArgs, "--preview-window", window)
-		}
-	}
-	fzfCmd := exec.Command("fzf", fzfArgs...)
+	fzfCmd := exec.Command("fzf", buildFZFArgs(query, vis)...)
 	fzfCmd.Stdin = &input
 	fzfCmd.Stderr = os.Stderr
 	out, err := fzfCmd.Output()

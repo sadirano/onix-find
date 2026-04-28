@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,6 +47,7 @@ func loadConfig(onixHome string) Config {
 		return cfg
 	}
 	if _, err := toml.DecodeFile(p, &cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to parse %s: %v\n", p, err)
 		return cfg
 	}
 	applyDefaults(&cfg)

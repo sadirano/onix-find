@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"syscall"
 )
 
@@ -72,9 +70,4 @@ func OpenMixedFiles(editor string, files []string) error {
 		return nil
 	}
 	return RunEditorCommand(editor, "", textFiles...)
-}
-
-func editorBase(editor string) string {
-	base := strings.ToLower(filepath.Base(strings.TrimSpace(editor)))
-	return strings.TrimSuffix(base, filepath.Ext(base))
 }
