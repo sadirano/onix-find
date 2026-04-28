@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -50,31 +49,7 @@ func loadConfig(onixHome string) Config {
 	}
 	if _, err := toml.DecodeFile(p, &cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "warning: failed to parse %s: %v\n", p, err)
-		return cfg
+		return defaultConfig()
 	}
-	applyDefaults(&cfg)
 	return cfg
-}
-
-func applyDefaults(v *Config) {
-	def := defaultConfig()
-	v.FZF.FF.Prompt = fallback(v.FZF.FF.Prompt, def.FZF.FF.Prompt)
-	v.FZF.FF.Layout = fallback(v.FZF.FF.Layout, def.FZF.FF.Layout)
-	v.FZF.FF.Preview = fallback(v.FZF.FF.Preview, def.FZF.FF.Preview)
-	v.FZF.FF.PreviewWindow = fallback(v.FZF.FF.PreviewWindow, def.FZF.FF.PreviewWindow)
-}
-
-func appendLayoutArg(args []string, layout string) []string {
-	layout = strings.TrimSpace(layout)
-	if layout == "" || strings.EqualFold(layout, "default") {
-		return args
-	}
-	return append(args, "--layout", layout)
-}
-
-func fallback(v, def string) string {
-	if strings.TrimSpace(v) == "" {
-		return def
-	}
-	return v
 }

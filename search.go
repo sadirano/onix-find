@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -49,35 +50,12 @@ func runFFWithEverythingStream(target, query, editor string, vis *Config) error 
 	if err != nil {
 		return fmt.Errorf("run es: %w", err)
 	}
-
-	fzfCmd := exec.Command("fzf", buildFZFArgs(query, vis)...)
-	fzfCmd.Stdin = esOut
-	fzfCmd.Stderr = os.Stderr
-
 	if err := esCmd.Start(); err != nil {
 		return fmt.Errorf("run es: %w", err)
 	}
-	out, err := fzfCmd.Output()
+	err = runFFWithInput(esOut, query, editor, vis)
 	_ = esCmd.Wait()
-	if err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			return nil
-		}
-		return fmt.Errorf("run fzf: %w", err)
-	}
-	key, selected := parseFzfExpectOutput(out)
-	if len(selected) == 0 {
-		return nil
-	}
-	if key == "ctrl-e" {
-		for _, file := range selected {
-			if err := OpenInExplorer(file); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	return OpenMixedFiles(editor, selected)
+	return err
 }
 
 func runFFWithWalkFallback(target, query, editor string, vis *Config) error {
@@ -89,15 +67,18 @@ func runFFWithWalkFallback(target, query, editor string, vis *Config) error {
 		fmt.Println("No files found.")
 		return nil
 	}
-
 	var input bytes.Buffer
 	for _, file := range files {
 		input.WriteString(file)
 		input.WriteByte('\n')
 	}
+	return runFFWithInput(&input, query, editor, vis)
+}
 
+// runFFWithInput runs fzf with the given stdin and handles the result.
+func runFFWithInput(stdin io.Reader, query, editor string, vis *Config) error {
 	fzfCmd := exec.Command("fzf", buildFZFArgs(query, vis)...)
-	fzfCmd.Stdin = &input
+	fzfCmd.Stdin = stdin
 	fzfCmd.Stderr = os.Stderr
 	out, err := fzfCmd.Output()
 	if err != nil {
@@ -106,7 +87,6 @@ func runFFWithWalkFallback(target, query, editor string, vis *Config) error {
 		}
 		return fmt.Errorf("run fzf: %w", err)
 	}
-
 	key, selected := parseFzfExpectOutput(out)
 	if len(selected) == 0 {
 		return nil
@@ -190,11 +170,19 @@ func firstCommandToken(command string) string {
 		if idx := strings.Index(rest, `"`); idx >= 0 {
 			return rest[:idx]
 		}
-		return strings.Trim(rest, `"`)
+		return rest
 	}
 	parts := strings.Fields(command)
 	if len(parts) == 0 {
 		return ""
 	}
 	return parts[0]
+}
+
+func appendLayoutArg(args []string, layout string) []string {
+	layout = strings.TrimSpace(layout)
+	if layout == "" || strings.EqualFold(layout, "default") {
+		return args
+	}
+	return append(args, "--layout", layout)
 }
