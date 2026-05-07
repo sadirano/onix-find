@@ -1,21 +1,12 @@
 package main
 
-// onix-ff — file finder module for onix.
-//
-// Invoked by the onix dispatch mechanism:
-//
-//	ONIX_MODULE=ff onix <alias> [query]   find files, open in editor (ctrl-e = open in Explorer)
-//
-// Environment variables (set by onix core at dispatch time):
-//
-//	ONIX_TARGET   resolved absolute path of the target directory
-//	ONIX_HOME     onix home directory (~/.onix), used to locate onix.visual.toml
-//	ONIX_EDITOR   preferred editor (resolved by onix core from config + EDITOR env)
-
 import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/sadirano/onix-find/internal/config"
+	"github.com/sadirano/onix-find/internal/search"
 )
 
 func main() {
@@ -29,11 +20,11 @@ func main() {
 	}
 
 	editor := resolveEditor()
-	vis := loadConfig(os.Getenv("ONIX_HOME"))
+	vis := config.LoadVisualConfig(os.Getenv("ONIX_HOME"))
 
 	query := strings.TrimSpace(strings.Join(os.Args[1:], " "))
 
-	if err := runFF(target, query, editor, &vis); err != nil {
+	if err := search.RunFF(target, query, editor, &vis); err != nil {
 		fatal("%v", err)
 	}
 }
