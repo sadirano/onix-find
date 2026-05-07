@@ -1,4 +1,4 @@
-module github.com/sadirano/onix-ff
+module github.com/sadirano/onix-find
 
 go 1.22.0
 
